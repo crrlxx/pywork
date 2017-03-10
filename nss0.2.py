@@ -12,7 +12,7 @@ def getPDFFromNet(html_page, total_page):
     print 'totalAnnouncement:', unifile['totalAnnouncement']
 
     for f in range(0, total_page):
-        if unifile['announcements'][f]['adjunctType'] is 'PDF':
+        if unifile['announcements'][f]['adjunctType'] == 'PDF':
             localPDF = localDir +unifile['announcements'][f]['announcementId']\
                    +unifile['announcements'][f]['announcementTitle'] +".pdf"
         elif unifile['announcements'][f]['adjunctType'] is None:
@@ -21,7 +21,7 @@ def getPDFFromNet(html_page, total_page):
         else:
             print "File type needs support:", unifile['announcements'][f]['adjunctType'], ", call tim."
             localPDF = localDir +unifile['announcements'][f]['announcementId']\
-                   +unifile['announcements'][f]['announcementTitle'] +unifile['announcements'][f]['adjunctUrl']
+                   +unifile['announcements'][f]['announcementTitle'] +"."+unifile['announcements'][f]['adjunctType']
         try:
             print 'download file:', localPDF
             urllib.urlretrieve(origin+unifile['announcements'][f]['adjunctUrl'], localPDF)  # 按照url进行下载，并以其文件名存储到本地目录
@@ -71,7 +71,7 @@ if __name__=='__main__':
     #        教育;卫生和社会工作;文化、体育和娱乐业;综合;
 
     values = {'stock': '',  # 分号里直接填写股票代码 代码和关键字不能同时填
-              'searchkey': '青岛国货集团股份有限公司2001年第一次;',  # 填写搜索关键字，示例为 青岛国货集团股份有限公司2001年第一次
+              'searchkey': '公司;',  # 填写搜索关键字，示例为 青岛国货集团股份有限公司2001年第一次
               'plate': 'szmb;',  # 填写板块代码，具体代码见上面，示例为 szmb/深圳主板
               'category': 'category_gddh_szsh;',  # 填写公告类别代码，示例为 category_gddh_szsh/股东大会
               'trade': '金融业;',  # 填写行业，示例为 金融业
