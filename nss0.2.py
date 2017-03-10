@@ -15,7 +15,7 @@ def getPDFFromNet(html_page, total_page):
         if unifile['announcements'][f]['adjunctType'] is 'PDF':
             localPDF = localDir +unifile['announcements'][f]['announcementId']\
                    +unifile['announcements'][f]['announcementTitle'] +".pdf"
-        elif unifile['announcements'][f]['adjunctType'] is '':
+        elif unifile['announcements'][f]['adjunctType'] is None:
             localPDF = localDir +unifile['announcements'][f]['announcementId']\
                    +unifile['announcements'][f]['announcementTitle'] +".html"
         else:
@@ -128,7 +128,7 @@ if __name__=='__main__':
     the_page = response.read()
 
     unifile = json.loads(the_page)
-    getPDFFromNet(the_page, page_size)
+    getPDFFromNet(the_page, unifile['totalAnnouncement'])
     page_num += 1
     print 'page_num:', page_num
     values['pageNum'] += 1
