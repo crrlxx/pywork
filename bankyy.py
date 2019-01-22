@@ -24,16 +24,21 @@ sys.setdefaultencoding("utf-8")
 
 days = []
 for i in range(7):
-    days.insert(0, datetime.date.today() - datetime.timedelta(i))
+    days.insert(0, str(datetime.date.today() - datetime.timedelta(i)))
 
 homepath = os.getcwd()+os.sep+"excel"+os.sep
-print("Checking date:", str(days[0]), str(days[6]))
+print("Checking date:", days[0], days[6])
 print("Working directory:", homepath)
 wb_out = workbook.Workbook()
 ws_out = wb_out.get_sheet_by_name("Sheet")
 i_row = 1
 i_col = 1
-
+shibor_step = ['O/N', '1W','2W','1M','3M','6M','9M','1Y']
+all_code = {'Shibor': 'Shibor', 'CYCC000': '国债', 'CYCC021': '政策性金融债（国开）',
+             'CYCC82A': '中期票据AAA+', 'CYCC82B': '中期票据AAA', 'CYCC82C': '中期票据AAA-', 'CYCC82D': '中期票据AA+',
+             'CYCC81A': '短期融资券AAA+', 'CYCC81B': '短期融资券AAA', 'CYCC81C': '短期融资券AAA-', 'CYCC81D': '短期融资券AA+',
+             'CYCC41A': '同业存单AAA+', 'CYCC41B': '同业存单AAA', 'CYCC41C': '同业存单AA+',
+             'CYCC80A': '企业债AAA+', 'CYCC80B': '企业债AAA', 'CYCC80D': '企业债AA+'}
 dict_code = {'CYCC000': '国债', 'CYCC021': '政策性金融债（国开）',
              'CYCC82A': '中期票据AAA+', 'CYCC82B': '中期票据AAA', 'CYCC82C': '中期票据AAA-', 'CYCC82D': '中期票据AA+',
              'CYCC81A': '短期融资券AAA+', 'CYCC81B': '短期融资券AAA', 'CYCC81C': '短期融资券AAA-', 'CYCC81D': '短期融资券AA+',
@@ -104,20 +109,42 @@ def loadexcel(code):
     end_url = '&termId=0.5'
 
     try:
-        print('Begin download excel:'+dict_code[code])
+        print('Begin download excel:'+all_code[code])
         #python3
         #urllib.request.urlretrieve(base_url + code + sdate + day7_bef + edate + str(day_now) + end_url, homepath + os.sep + code + '.xlsx', cbk)
         #python2
-        urllib.urlretrieve(base_url + code + sdate + str(days[0]) + edate + str(days[6]) + end_url, homepath + code + '.xlsx')
+        if code == "Shibor":
+            # shibor_url = 'http://www.chinamoney.com.cn/dqs/rest/cm-u-bk-shibor/ShiborHisExcel?lang=cn&startDate=2018-12-23&endDate=2019-01-22'
+            base_url = 'http://www.chinamoney.com.cn/dqs/rest/cm-u-bk-shibor/ShiborHisExcel?lang=cn&startDate='
+            urllib.urlretrieve(base_url + days[0] + edate + days[6], homepath + code + '.xlsx')
+        else:
+            urllib.urlretrieve(base_url + code + sdate + days[0] + edate + days[6] + end_url, homepath + code + '.xlsx')
     except Exception as e:
         print(e)
 
 
 if __name__ == '__main__':
     mkdir(homepath)
-    getshibor()
-    for item in dict_code.keys():
+    # getshibor()
+    for item in all_code.keys():
         loadexcel(item)
+
+    #把Shibor的数据拷贝进表格
+    wb_shibor = load_workbook(homepath+ "Shibor" + '.xlsx')
+    ws_shibor = wb_shibor.get_sheet_by_name("Sheet0")
+    ws_out.cell(row=i_row, column=i_col).value = "Type"
+    ws_out.cell(row=i_row, column=i_col+1).value = "日期"
+    for i in range(8):
+        ws_out.cell(row=i_row, column=i_col+i+2).value = shibor_step[i]
+    i_row += 1
+    for r in range(2, ws_shibor.max_row+1):
+        if ws_shibor.cell(row=i_row, column=i_col).value in days:
+            ws_out.cell(row=i_row, column=i_col).value = "Shibor"
+            for s in range(9):
+                ws_out.cell(row=i_row, column=i_col + s + 1).value = ws_shibor.cell(row=i_row, column=i_col + s).value
+            i_row += 1
+    print "Excel处理完成: Shibor"
+    #开始拷贝债和票据的数据
     ws_out.cell(row=i_row, column=i_col).value = "债和票据"
     ws_out.cell(row=i_row, column=i_col+1).value = "日期"
     # 写入观察数据的步进值
@@ -132,9 +159,9 @@ if __name__ == '__main__':
         # 填写类别，日期
         for d in range(7):
             ws_out.cell(row=i_row, column=i_col).value = dict_code[key]
-            ws_out.cell(row=i_row, column=i_col+1).value = str(days[d])
+            ws_out.cell(row=i_row, column=i_col+1).value = days[d]
             for r in range(1, ws_tmp.max_row + 1):
-                if ws_tmp.cell(row=r, column=1).value == str(days[d]) and str(ws_tmp.cell(row=r, column=2).value) in step:
+                if ws_tmp.cell(row=r, column=1).value == days[d] and str(ws_tmp.cell(row=r, column=2).value) in step:
                     # 获取对应的季度在step里的索引，然后把数据表里第三列的值填入对应的索引表格
                     index = step.index(ws_tmp.cell(row=r, column=2).value)
                     ws_out.cell(row=i_row, column=i_col+2+index).value = ws_tmp.cell(row=r, column=3).value
