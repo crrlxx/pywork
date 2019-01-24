@@ -123,7 +123,10 @@ def loadexcel(code, dday):
 
 if __name__ == '__main__':
     mkdir(homepath)
-    max_day = calendar.monthrange(datetime.datetime.now().year, datetime.datetime.now().month)[1]
+    m_year = datetime.datetime.now().year
+    m_month = datetime.datetime.now().month
+    m_day = datetime.datetime.now().day
+    max_day = calendar.monthrange(m_year, m_month)[1]
     if len(sys.argv) == 2:
         data_day = int(sys.argv[1])
         if data_day > 31:
@@ -180,7 +183,7 @@ if __name__ == '__main__':
             # 遍历完整个数据表，输出索引+1
             i_row += 1
         print "Excel处理完成:", dict_code[key]
-    wb_out.save("Result.xlsx")
+    wb_out.save("Result"+str(m_year)+'-'+str(m_month)+'-'+str(m_day)+".xlsx")
     print("数据输出完成，即将打开Result.xlsx确认.")
-    os.system('open Result.xlsx')
+    os.system('open '+"Result"+str(m_year)+'-'+str(m_month)+'-'+str(m_day)+".xlsx")
 
