@@ -9,6 +9,7 @@
 import requests
 import time
 import datetime
+import calendar
 import requests
 import sys
 import lxml.etree as etree
@@ -23,12 +24,9 @@ reload(sys)
 sys.setdefaultencoding("utf-8")
 
 days = []
-for i in range(7):
-    days.insert(0, str(datetime.date.today() - datetime.timedelta(i)))
+data_day = 7
 
 homepath = os.getcwd()+os.sep+"excel"+os.sep
-print("Checking date:", days[0], days[6])
-print("Working directory:", homepath)
 wb_out = workbook.Workbook()
 ws_out = wb_out.get_sheet_by_name("Sheet")
 i_row = 1
@@ -102,7 +100,7 @@ def getshibor():
     print("Shibor数据拉取完成.")
 
 
-def loadexcel(code):
+def loadexcel(code, dday):
     base_url = 'http://www.chinamoney.com.cn/dqs/rest/cm-u-bk-currency/ClsYldCurvHisExcel?lang=CN&bondType='
     sdate = '&reference=1&startDate='
     edate = '&endDate='
@@ -116,18 +114,31 @@ def loadexcel(code):
         if code == "Shibor":
             # shibor_url = 'http://www.chinamoney.com.cn/dqs/rest/cm-u-bk-shibor/ShiborHisExcel?lang=cn&startDate=2018-12-23&endDate=2019-01-22'
             base_url = 'http://www.chinamoney.com.cn/dqs/rest/cm-u-bk-shibor/ShiborHisExcel?lang=cn&startDate='
-            urllib.urlretrieve(base_url + days[0] + edate + days[6], homepath + code + '.xlsx')
+            urllib.urlretrieve(base_url + days[0] + edate + days[dday-1], homepath + code + '.xlsx')
         else:
-            urllib.urlretrieve(base_url + code + sdate + days[0] + edate + days[6] + end_url, homepath + code + '.xlsx')
+            urllib.urlretrieve(base_url + code + sdate + days[0] + edate + days[dday-1] + end_url, homepath + code + '.xlsx')
     except Exception as e:
         print(e)
 
 
 if __name__ == '__main__':
     mkdir(homepath)
+    max_day = calendar.monthrange(datetime.datetime.now().year, datetime.datetime.now().month)[1]
+    if len(sys.argv) == 2:
+        data_day = int(sys.argv[1])
+        if data_day > 31:
+            print('日期参数大于31天，非Shibor数据会拉取失败。当前允许最大天数为：'+str(max_day))
+    elif len(sys.argv) > 2:
+        print('日期参数超长，按默认取七天数据处理.')
+    else:
+        pass
+    for i in range(data_day):
+        days.insert(0, str(datetime.date.today() - datetime.timedelta(i)))
+    print("Checking date:", days[0], days[data_day - 1])
+    print("Working directory:", homepath)
     # getshibor()
     for item in all_code.keys():
-        loadexcel(item)
+        loadexcel(item, data_day)
 
     #把Shibor的数据拷贝进表格
     wb_shibor = load_workbook(homepath+ "Shibor" + '.xlsx')
@@ -157,7 +168,7 @@ if __name__ == '__main__':
         wb_tmp = load_workbook(homepath+ key + '.xlsx')
         ws_tmp = wb_tmp.get_sheet_by_name("Sheet0")
         # 填写类别，日期
-        for d in range(7):
+        for d in range(data_day):
             ws_out.cell(row=i_row, column=i_col).value = dict_code[key]
             ws_out.cell(row=i_row, column=i_col+1).value = days[d]
             for r in range(1, ws_tmp.max_row + 1):
