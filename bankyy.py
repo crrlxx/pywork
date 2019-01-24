@@ -181,5 +181,6 @@ if __name__ == '__main__':
             i_row += 1
         print "Excel处理完成:", dict_code[key]
     wb_out.save("Result.xlsx")
-    print("数据输出完成，请打开Result.xlsx确认.")
+    print("数据输出完成，即将打开Result.xlsx确认.")
+    os.system('open Result.xlsx')
 
