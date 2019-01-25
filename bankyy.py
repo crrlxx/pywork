@@ -32,27 +32,16 @@ ws_out = wb_out.get_sheet_by_name("Sheet")
 i_row = 1
 i_col = 1
 shibor_step = ['O/N', '1W','2W','1M','3M','6M','9M','1Y']
-all_code = {'Shibor': 'Shibor', 'CYCC000': '国债', 'CYCC021': '政策性金融债（国开）',
-             'CYCC82A': '中期票据AAA+', 'CYCC82B': '中期票据AAA', 'CYCC82C': '中期票据AAA-', 'CYCC82D': '中期票据AA+',
-             'CYCC81A': '短期融资券AAA+', 'CYCC81B': '短期融资券AAA', 'CYCC81C': '短期融资券AAA-', 'CYCC81D': '短期融资券AA+',
-             'CYCC41A': '同业存单AAA+', 'CYCC41B': '同业存单AAA', 'CYCC41C': '同业存单AA+',
-             'CYCC80A': '企业债AAA+', 'CYCC80B': '企业债AAA', 'CYCC80D': '企业债AA+'}
+
 dict_code = {'CYCC000': '国债', 'CYCC021': '政策性金融债（国开）',
              'CYCC82A': '中期票据AAA+', 'CYCC82B': '中期票据AAA', 'CYCC82C': '中期票据AAA-', 'CYCC82D': '中期票据AA+',
              'CYCC81A': '短期融资券AAA+', 'CYCC81B': '短期融资券AAA', 'CYCC81C': '短期融资券AAA-', 'CYCC81D': '短期融资券AA+',
              'CYCC41A': '同业存单AAA+', 'CYCC41B': '同业存单AAA', 'CYCC41C': '同业存单AA+',
              'CYCC80A': '企业债AAA+', 'CYCC80B': '企业债AAA', 'CYCC80D': '企业债AA+'}
+all_code = dict_code.copy()
+all_code['Shibor'] = 'Shibor'
 step = ["0.25", "0.5", "0.75", "1.0", "1.5", "2.0"]
 
-#国债 CYCC000 0.25 0.5 0.75 1.0 1.5 2.0
-#http://www.chinamoney.com.cn/ags/ms/cm-u-bk-currency/ClsYldCurvHis?lang=CN&bondType=CYCC000&reference=1&startDate=2019-01-13&endDate=2019-01-20&termId=0.5
-#政策性金融债（国开） CYCC021 0.25 0.5 0.75 1.0 1.5 2.0
-#http://www.chinamoney.com.cn/dqs/rest/cm-u-bk-currency/ClsYldCurvHisExcel?lang=CN&bondType=CYCC021&reference=1&startDate=2019-01-13&endDate=2019-01-20&termId=0.5
-#中期票据AA+(CYCC82D) AAA-(CYCC82C) AAA(CYCC82B) AAA+(CYCC82A) 0.25 0.5 0.75 1.0 1.5 2.0
-#http://www.chinamoney.com.cn/dqs/rest/cm-u-bk-currency/ClsYldCurvHisExcel?lang=CN&bondType=CYCC82A&reference=1&startDate=2018-12-18&endDate=2019-01-18&termId=0.5
-#短期融资券 AA+(CYCC81D) AAA-(CYCC81C) AAA(CYCC81B) AAA+(CYCC81A)
-#企业债 AA+(CYCC80D) AAA(CYCC80B) AAA+(CYCC80A)
-#同业存单 AA+(CYCC41C)  AAA(CYCC41B) AAA+(CYCC41A)
 
 def cbk(a,b,c):
     '''回调函数
@@ -108,8 +97,6 @@ def loadexcel(code, dday):
 
     try:
         print('Begin download excel:'+all_code[code])
-        #python3
-        #urllib.request.urlretrieve(base_url + code + sdate + day7_bef + edate + str(day_now) + end_url, homepath + os.sep + code + '.xlsx', cbk)
         #python2
         if code == "Shibor":
             # shibor_url = 'http://www.chinamoney.com.cn/dqs/rest/cm-u-bk-shibor/ShiborHisExcel?lang=cn&startDate=2018-12-23&endDate=2019-01-22'
@@ -127,6 +114,7 @@ if __name__ == '__main__':
     m_month = datetime.datetime.now().month
     m_day = datetime.datetime.now().day
     max_day = calendar.monthrange(m_year, m_month)[1]
+
     if len(sys.argv) == 2:
         data_day = int(sys.argv[1])
         if data_day > 31:
@@ -167,7 +155,7 @@ if __name__ == '__main__':
         ws_out.cell(row=i_row, column=i_col+i+2).value = step[i]
     i_row += 1
     # 按序打开下载的excel，取数据出来
-    for key in dict_code.keys():
+    for key in sorted(dict_code.keys()):
         wb_tmp = load_workbook(homepath+ key + '.xlsx')
         ws_tmp = wb_tmp.get_sheet_by_name("Sheet0")
         # 填写类别，日期
@@ -186,4 +174,5 @@ if __name__ == '__main__':
     wb_out.save("Result"+str(m_year)+'-'+str(m_month)+'-'+str(m_day)+".xlsx")
     print("数据输出完成，即将打开Result.xlsx确认.")
     os.system('open '+"Result"+str(m_year)+'-'+str(m_month)+'-'+str(m_day)+".xlsx")
+
 
