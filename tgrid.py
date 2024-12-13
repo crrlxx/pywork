@@ -2,13 +2,17 @@ import openpyxl
 from openpyxl import load_workbook
 
 '''
-实现一个脚本，可以输入计算标的，最高参考值、最低参考值，当前份数，单位值。
+实现一个脚本，可以输入计算标的，最高参考值、最低参考值，预期值，现存值，单位值。
 根据计算标的，输出操作计划及份数，操作计划按参考值区间的10%来输出，
-操作逻辑为：根据预期总值和当前总值，判断当前份数在哪个区间，然后根据区间，输出操作计划及份数，以斐波那契数列来决定投入或减少的份数
-总共最多143份，根据当前份数和单位值、输出
-1.下一阶段如果是上升，接下来的三步操作及操作时的参考值
-2.下一阶段如果是下降，接下来的三步操作及操作时的参考值
-支持更新特定计算标的当前份数和单位值
+操作逻辑为：
+1.根据预期总值和当前总值，判断当前份数在哪个区间
+2.然后根据区间，输出操作计划及份数，以斐波那契数列来决定投入或减少的份数
+3.总共最多143份，根据当前总值计算出当前的份数和单元值
+3.1.下一阶段如果是上升，接下来的三步操作及操作时的参考值
+3.2.下一阶段如果是下降，接下来的三步操作及操作时的参考值
+4.支持更新特定计算标的现存值和单位值
+5.支持记录历史操作计划
+6.支持查看所有计算标的
 '''
 file_path = "grid.xlsx"
 def main():
@@ -91,11 +95,16 @@ def get_operation_plan(high_value, low_value, current_shares, unit_value):
     increase_plans = []  
     decrease_plans = []  
     
-    if drop_count > 3:
+    if drop_count > 7:
+        # 现存较多的情况，上升操作受限
+        for i in range(drop_count-7,0,-1):
+            decrease_plans.append((fib_sequence[-i], round(float(unit_value * (1 - 0.1 * (drop_count - i + 1))), 2)))
+    if drop_count <= 7 and drop_count > 3:
         for i in range(0, 3):
             increase_plans.append((fib_sequence[drop_count+i], round(float(unit_value * (1 + 0.1 * (i+1))), 2)))
             decrease_plans.append((fib_sequence[-(drop_count-i)], round(float(unit_value * (1 - 0.1 * (i+1))), 2)))
     else:
+        # 现存较少的情况，下降操作受限  
         for i in range(drop_count,0,-1):
             decrease_plans.append((fib_sequence[-i], round(float(unit_value * (1 - 0.1 * (drop_count - i + 1))), 2)))
         for i in range(0, 3):
