@@ -40,12 +40,16 @@ def main():
 
 
 def add_target():
-    print("请输入计算标的,最高参考值,最低参考值,当前份数,单位值")
-    target, max_ref, min_ref, current_shares, unit_value = input().split(',')
-    print("input return: ",target, max_ref, min_ref, current_shares, unit_value)
+    print("请输入计算标的，最高参考值、最低参考值，预期值，现存值，单位值 ")
+    target, max_ref, min_ref, expect_val, current_val, unit_value = input().split(',')
+    print("input return: ",target, max_ref, min_ref, expect_val, current_val, unit_value)
     print("Current database:\n")
+    # 计算当前份数
+    current_shares = current_val/unit_value
+    # 根据当前值和目标值，计算当前单位值在区间内的位置
+    current_percent = current_val/expect_val
     max_row = read_excel(file_path, "Sheet1")
-    plan = get_operation_plan(float(max_ref), float(min_ref), int(current_shares), float(unit_value))
+    plan = get_operation_plan(float(max_ref), float(min_ref), int(current_percent), int(current_shares), float(unit_value))
 
     input_data = [[target, max_ref, min_ref, current_shares, unit_value]]
     input_data[0] = input_data[0] + plan
@@ -56,7 +60,7 @@ def read_excel(file_path, sheet_name):
     sheet = workbook[sheet_name]
     for row in sheet.rows:
         for cell in row:
-            print(cell.value, "\t", end="")
+            print(cell.value, "\t\|", end="")
         print()
     return sheet.max_row
 
@@ -79,36 +83,41 @@ def fibonacci(n):
     print(fib_sequence)
     return fib_sequence  
 
-def get_operation_plan(high_value, low_value, current_shares, unit_value):  
+def get_operation_plan(high_value, low_value, current_percent, current_shares, unit_value):  
     """根据当前单位值和参考值生成操作计划"""  
-    # 默认当前份数等于最大份数，即把当前shares分成143份，然后根据当前单位值在区间内的位置，计算出应该保留的份数，然后输出操作计划
+    # 按143份计算当前份数，然后根据区间位置输出操作计划
     drop_count = int((unit_value-low_value)/(high_value-low_value) /0.1)
-    saved_shares = current_shares * (unit_value-low_value)/(high_value-low_value)
-    print("saved_shares: ", saved_shares)
-    max_shares = 143  
+    max_step = 143  
+    current_step = int(max_step * current_percent)
+    shares_per_step = int(current_shares / current_step)
+    print("当前份数: %d, 每份shares数:%d", current_step, shares_per_step)
     fib_sequence = fibonacci(10)  # 生成前10个斐波那契数  
-
-    # 计算参考值区间  
-    high_thresholds = [high_value * (1 - 0.1 * i) for i in range(1, 11)]  
-    low_thresholds = [low_value * (1 + 0.1 * i) for i in range(1, 11)]  
 
     increase_plans = []  
     decrease_plans = []  
-    
-    if drop_count > 7:
-        # 现存较多的情况，上升操作受限
-        for i in range(drop_count-7,0,-1):
-            decrease_plans.append((fib_sequence[-i], round(float(unit_value * (1 - 0.1 * (drop_count - i + 1))), 2)))
-    if drop_count <= 7 and drop_count > 3:
-        for i in range(0, 3):
-            increase_plans.append((fib_sequence[drop_count+i], round(float(unit_value * (1 + 0.1 * (i+1))), 2)))
-            decrease_plans.append((fib_sequence[-(drop_count-i)], round(float(unit_value * (1 - 0.1 * (i+1))), 2)))
-    else:
-        # 现存较少的情况，下降操作受限  
-        for i in range(drop_count,0,-1):
-            decrease_plans.append((fib_sequence[-i], round(float(unit_value * (1 - 0.1 * (drop_count - i + 1))), 2)))
-        for i in range(0, 3):
-            increase_plans.append((fib_sequence[drop_count+i], round(float(unit_value * (1 + 0.1 * (i+1))), 2)))
+    # 循环加fibonacci数，直到达到当前份数，然后根据当前份数和区间位置输出操作计划
+    # 如果当前份数大于当前单元价值在的区间，则要减少，反之则增加  
+    fib_count = 0
+    for i in range(0, 10):
+        fib_count += fib_sequence[i]
+        if current_step <= fib_count:
+            increase_plans.append((fib_sequence[i], round(float(unit_value * (1 + 0.1 * (i+1))), 2)))
+            if i == 0:
+                pass
+            elif i == 1:
+                decrease_plans.append((fib_sequence[i-1], round(float(unit_value * (1 - 0.1 * (i))), 2)))
+            if i == 8:
+                increase_plans.append((fib_sequence[i+1], round(float(unit_value * (1 + 0.1 * (i+2))), 2)))
+            elif i == 9:
+                pass
+            else:
+                increase_plans.append((fib_sequence[i+1], round(float(unit_value * (1 + 0.1 * (i+2))), 2)))
+                increase_plans.append((fib_sequence[i+2], round(float(unit_value * (1 + 0.1 * (i+3))), 2)))
+                decrease_plans.append((fib_sequence[i-1], round(float(unit_value * (1 - 0.1 * (i+1))), 2)))
+                decrease_plans.append((fib_sequence[i-2], round(float(unit_value * (1 - 0.1 * (i+2))), 2)))
+        else:
+            pass
+
 
     # 输出操作计划和更新后的当前份数 
     print("increase_plans + decrease_plans:", increase_plans + decrease_plans)
